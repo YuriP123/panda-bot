@@ -15,6 +15,13 @@ client.once('ready', () => {
 	const browser = await puppeteer.launch({headless: false});
 	const page = await browser.newPage();
 	await page.goto('https://game.nftpanda.space/');
+	await page.click(".check-term", {ClickCount:1});
+	await page.click(".button-in", {ClickCount:1});
+	const [button] = await page.$x("//span[contains(., 'WAX Cloud Wallet')]");
+	if (button) {
+		await button.click();
+	}
+	//await browser.close(); --closes browser
 	
 })();
 
