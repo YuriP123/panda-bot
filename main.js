@@ -1,7 +1,9 @@
 // Require the necessary discord.js classes
 const { Client, Intents } = require('discord.js');
-const { token } = require('./config.json');
-const puppeteer = require('puppeteer'); 
+const { token,channelId } = require('./config.json');
+const puppeteer = require('puppeteer');
+require('./deploy-commands.js');
+const prefix = '-';
 
 // Create a new client instance
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
@@ -11,37 +13,48 @@ client.once('ready', () => {
 	console.log('Ready!');
 });
 
-const waxLogin = async (page, channel) => {
+client.on('message',message=>{
+	if(!message.content.startsWith(prefix)) return;
+
+	const args = msg.content.substring(prefix.length).split(" ");
+	const command = args.shift().toLowerCase();
+
+	if(command === 'ping'){
+		console.log(args);
+		console.log(command);
+		client.channels.cache.get(channelId).send('pong');
+	}
+});
+
+const waxLogin = async () => {
+	const browser = await puppeteer.launch({headless: false});
+	const page = await browser.newPage();
 	await page.goto('https://all-access.wax.io/');
   
 	await page.waitForSelector('input[name=userName]', {
 	  visible: true,
 	});
   
-	await page.type('input[name=userName', 'mmborado@gmail.com');
-	await page.type('input[name=password', 'Fireballing23.');
+	await page.type('input[name=userName', 'miguel.pasamonte2@gmail.com');
+	await page.type('input[name=password', 'YuriP123!');
 	await page.click('button.button-primary');
   
 	await page.waitForNavigation({
 	  waitUntil: 'networkidle0',
 	});
   
-	const hasAuth = (await page.content()).match(/Login Authentication/gi)
-  
+	const hasAuth = (await page.content()).match(/Login Authentication/gi);
+
 	if(hasAuth) {
-	  channel.send('Login Authentication Required');
+		client.channels.cache.get(channelId).send('Send Authentication Code Here');
+		await page.content();
 	} else {
-  
-	  state.isWaxLogin = true;
-	  init(page);
 	}
-  
 }
 
-(async () =>{
+const launch = async () =>{
+	/*
 	const browser = await puppeteer.launch({headless: false});
-	const page = await browser.newPage();
-	await page.goto('https://game.nftpanda.space/');
 	await page.click(".check-term", {ClickCount:1});
 	await page.click(".button-in", {ClickCount:1});
 	const [button] = await page.$x("//span[contains(., 'WAX Cloud Wallet')]");
@@ -59,9 +72,10 @@ const waxLogin = async (page, channel) => {
 			   //.....
 		}
 	});
+	*/
 	//await browser.close(); --closes browser
 	
-})();
+};
 
 /*
 	-------------POPUP HANDLING-----------
@@ -77,14 +91,6 @@ const waxLogin = async (page, channel) => {
     });
 
 */
-
-
-
-
-
-
-
-
 
 
 client.login(token);
