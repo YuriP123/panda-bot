@@ -1,8 +1,7 @@
 // Require the necessary discord.js classes
 const { Client, Intents } = require('discord.js');
-const { token,channelId } = require('./config.json');
+const { token,guildId } = require('./config.json');
 const puppeteer = require('puppeteer');
-require('./deploy-commands.js');
 const prefix = '-';
 
 // Create a new client instance
@@ -22,7 +21,21 @@ client.on('message',message=>{
 	if(command === 'ping'){
 		console.log(args);
 		console.log(command);
-		client.channels.cache.get(channelId).send('pong');
+		client.channels.cache.get(guildId).send('pong');
+	}
+});
+
+client.on('interactionCreate', async interaction => {
+	if (!interaction.isCommand()) return;
+
+	const { commandName } = interaction;
+
+	if (commandName === 'ping') {
+		await interaction.reply('Pong!');
+	} else if (commandName === 'server') {
+		await interaction.reply('Server info.');
+	} else if (commandName === 'user') {
+		await interaction.reply('User info.');
 	}
 });
 
@@ -46,7 +59,7 @@ const waxLogin = async () => {
 	const hasAuth = (await page.content()).match(/Login Authentication/gi);
 
 	if(hasAuth) {
-		client.channels.cache.get(channelId).send('Send Authentication Code Here');
+		client.channels.cache.get(guildId).send('Send Authentication Code Here');
 		await page.content();
 	} else {
 	}
