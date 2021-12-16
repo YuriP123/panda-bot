@@ -2,7 +2,6 @@
 const { Client, Intents } = require('discord.js');
 const { token,guildId } = require('./config.json');
 const puppeteer = require('puppeteer');
-const prefix = '-';
 
 // Create a new client instance
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
@@ -12,34 +11,18 @@ client.once('ready', () => {
 	console.log('Ready!');
 });
 
-client.on('message',message=>{
-	if(!message.content.startsWith(prefix)) return;
-
-	const args = msg.content.substring(prefix.length).split(" ");
-	const command = args.shift().toLowerCase();
-
-	if(command === 'ping'){
-		console.log(args);
-		console.log(command);
-		client.channels.cache.get(guildId).send('pong');
-	}
-});
-
 client.on('interactionCreate', async interaction => {
 	if (!interaction.isCommand()) return;
 
 	const { commandName } = interaction;
-
-	if (commandName === 'ping') {
-		await interaction.reply('Pong!');
-	} else if (commandName === 'server') {
-		await interaction.reply('Server info.');
-	} else if (commandName === 'user') {
-		await interaction.reply('User info.');
+	
+	if (commandName === 'auth') {
+		const messageToSend = interaction.options.getString("code");
+		interaction.reply({content:messageToSend});
 	}
 });
 
-const waxLogin = async () => {
+(async () => {
 	const browser = await puppeteer.launch({headless: false});
 	const page = await browser.newPage();
 	await page.goto('https://all-access.wax.io/');
@@ -61,9 +44,25 @@ const waxLogin = async () => {
 	if(hasAuth) {
 		client.channels.cache.get(guildId).send('Send Authentication Code Here');
 		await page.content();
-	} else {
+	} 
+	else {
+		await page.waitForTimeout(8000);
+		const page2 = await browser.newPage();        
+		await page2.goto('https://game.nftpanda.space/', {waitUntil: 'load', timeout: 0});
+		await page2.bringToFront();
+		await page2.click(".check-term", {ClickCount:1});
+		await page2.click(".button-in", {ClickCount:1});
+		const [button] = await page2.$x("//span[contains(., 'WAX Cloud Wallet')]");
+		if (button) {
+			await button.click();
+		}
+		await page.waitForTimeout(4000);
+		const [button2] = await page2.$x("//span[contains(., 'Begin adventure')]");
+		if (button2) {
+			await button2.click();
+		}
 	}
-}
+})()
 
 const launch = async () =>{
 	/*
