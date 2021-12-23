@@ -2,6 +2,7 @@
 const { Client, Intents } = require('discord.js');
 const { token,guildId } = require('./config.json');
 const puppeteer = require('puppeteer');
+var x = true;
 
 // Create a new client instance
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
@@ -22,7 +23,7 @@ client.on('interactionCreate', async interaction => {
 	}
 });
 
-(async () => {
+const signin = async () =>{
 	const browser = await puppeteer.launch({headless: false});
 	const page = await browser.newPage();
 	await page.goto('https://all-access.wax.io/');
@@ -47,24 +48,50 @@ client.on('interactionCreate', async interaction => {
 	} 
 	else {
 		await page.waitForTimeout(8000);
-		const page2 = await browser.newPage();        
-		await page2.goto('https://game.nftpanda.space/', {waitUntil: 'load', timeout: 0});
-		await page2.bringToFront();
-		await page2.click(".check-term", {ClickCount:1});
-		await page2.click(".button-in", {ClickCount:1});
-		const [button] = await page2.$x("//span[contains(., 'WAX Cloud Wallet')]");
-		if (button) {
-			await button.click();
-		}
-		await page.waitForTimeout(4000);
-		const [button2] = await page2.$x("//span[contains(., 'Begin adventure')]");
-		if (button2) {
-			await button2.click();
-		}
+		await launch(browser);
 	}
-})()
+};
 
-const launch = async () =>{
+const launch = async (browser) =>{
+	const page2 = await browser.newPage();        
+	await page2.goto('https://game.nftpanda.space/', {waitUntil: 'load', timeout: 0});
+	await page2.waitForTimeout(4000);
+	await page2.bringToFront();
+	await maintCheck(page2);
+	await page2.click(".check-term", {ClickCount:1});
+	await page2.click(".button-in", {ClickCount:1});
+	const [button] = await page2.$x("//span[contains(., 'WAX Cloud Wallet')]");
+	if (button) {
+		await button.click();
+	}  
+	await page2.waitForTimeout(4000);
+	const [button2] = await page2.$x("//span[contains(., 'Begin adventure')]");
+	if (button2) {
+		await button2.click();
+	}
+	await page2.waitForTimeout(4000);
+	const [button3] = await page2.$x("//span[contains(., 'SEND to adventure')]");
+	if (button3) {
+		await button3.click();
+		await button3.click();
+		await button3.click();
+		await client.channels.cache.get(guildId).send('Harvest Sucessful');
+	}
+};
+
+const maintCheck = async (page2) =>{
+	if (await page2.$(".maint")){
+		client.channels.cache.get(guildId).send('STATUS: Maintenance - will try again in 10 minutes');
+		await page2.waitForTimeout(300000);
+		maintCheck();
+	}
+	else{
+		return;
+	}
+};
+
+signin();
+setInterval(signin, 7200000);
 	/*
 	const browser = await puppeteer.launch({headless: false});
 	await page.click(".check-term", {ClickCount:1});
@@ -85,10 +112,6 @@ const launch = async () =>{
 		}
 	});
 	*/
-	//await browser.close(); --closes browser
-	
-};
-
 /*
 	-------------POPUP HANDLING-----------
         browser.on('targetcreated', async (target) => { //This block intercepts all new events
