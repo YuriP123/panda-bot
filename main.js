@@ -52,6 +52,13 @@ const signin = async () =>{
 	}
 };
 
+const foodCheck = async (page2) =>{
+
+	const element = await page2.waitForSelector('.energy-info-number'); // select the element
+	const value = await element.evaluate(el => el.textContent); // grab the textContent from the element, by evaluating this function in the browser context	
+	await client.channels.cache.get(guildId).send('Panda currently has: ' + value.substring(3));
+};
+
 const launch = async (browser) =>{
 	const page2 = await browser.newPage();        
 	await page2.goto('https://game.nftpanda.space/', {waitUntil: 'load', timeout: 0});
@@ -70,12 +77,21 @@ const launch = async (browser) =>{
 		await button2.click();
 	}
 	await page2.waitForTimeout(4000);
+	await foodCheck(page2);
 	const [button3] = await page2.$x("//span[contains(., 'SEND to adventure')]");
 	if (button3) {
 		await button3.click();
 		await button3.click();
 		await button3.click();
-		await client.channels.cache.get(guildId).send('Harvest Sucessful');
+		await page2.waitForSelector('.count-up');
+		let element = await page2.$('.count-up');
+		let value = await page2.evaluate(el => el.textContent, element)
+		await client.channels.cache.get(guildId).send('Harvest Sucessful, gained: ' + value + ' BAM.');
+		await browser.close();
+	}
+	else{
+		await client.channels.cache.get(guildId).send('Harvest Unsucessful, will try again soon...');
+		await browser.close();
 	}
 };
 
@@ -92,40 +108,4 @@ const maintCheck = async (page2) =>{
 
 signin();
 setInterval(signin, 7200000);
-	/*
-	const browser = await puppeteer.launch({headless: false});
-	await page.click(".check-term", {ClickCount:1});
-	await page.click(".button-in", {ClickCount:1});
-	const [button] = await page.$x("//span[contains(., 'WAX Cloud Wallet')]");
-	if (button) {
-		await button.click();
-	}
-	browser.on('targetcreated', async (target) => { //This block intercepts all new events
-		if (target.type() === 'page') {               // if it tab/page
-			   //const page = await target.page();      // declare it
-			   const page2 = await target.page();      // declare it
-			   const url = page2.url();                // example, look at her url
-			   console.log('***** ' + url);
-			   await page2.waitForSelector("#userName");
-			   await page2.type("#userName","emailrighthere");
-			   //.....
-		}
-	});
-	*/
-/*
-	-------------POPUP HANDLING-----------
-        browser.on('targetcreated', async (target) => { //This block intercepts all new events
-      if (target.type() === 'page') {               // if it tab/page
-             //const page = await target.page();      // declare it
-             const page = await target.page();      // declare it
-             const url = page.url();                // example, look at her url
-             console.log('***** ' + url);
-
-             //.....
-      }
-    });
-
-*/
-
-
 client.login(token);
