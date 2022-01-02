@@ -12,17 +12,6 @@ client.once('ready', () => {
 	console.log('Ready!');
 });
 
-client.on('interactionCreate', async interaction => {
-	if (!interaction.isCommand()) return;
-
-	const { commandName } = interaction;
-	
-	if (commandName === 'auth') {
-		const messageToSend = interaction.options.getString("code");
-		interaction.reply({content:messageToSend});
-	}
-});
-
 const signin = async () =>{
 	const browser = await puppeteer.launch({headless: false});
 	const page = await browser.newPage();
@@ -34,20 +23,38 @@ const signin = async () =>{
   
 	await page.type('input[name=userName', 'miguel.pasamonte2@gmail.com');
 	await page.type('input[name=password', 'YuriP123!');
-	await page.click('button.button-primary');
-  
+	await page.click('.button-primary');
+	await page.click('.button-primary');
+
 	await page.waitForNavigation({
 	  waitUntil: 'networkidle0',
 	});
   
 	const hasAuth = (await page.content()).match(/Login Authentication/gi);
+	//const hasAuth = await page.waitForXPath("//*[contains(text(), 'Login Authentication')]");
 
 	if(hasAuth) {
-		client.channels.cache.get(guildId).send('Send Authentication Code Here');
+		console.log('hello');	
+		await client.channels.cache.get(guildId).send('Authentication Required, Please eneter code using the command');
 		await page.content();
+		client.on('interactionCreate', async interaction => {
+			if (!interaction.isCommand()) return;
+		
+			const { commandName } = interaction;
+			
+			if (commandName === 'auth') {
+				const messageToSend = interaction.options.getString("code");
+				await page.type('input[name=code', messageToSend);
+				await interaction.reply({content:messageToSend});
+				await page.click('.button-text');
+				await page.waitForTimeout(8000);
+				await launch(browser);
+			}
+		});
 	} 
 	else {
 		await page.waitForTimeout(8000);
+		console.log('lmao');
 		await launch(browser);
 	}
 };
