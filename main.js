@@ -90,6 +90,7 @@ const launch = async (browser) =>{
 		await button3.click();
 		await button3.click();
 		await button3.click();
+		await page2.waitForTimeout(4000);
 		await page2.waitForSelector('.count-up');
 		let element = await page2.$('.count-up');
 		let value = await page2.evaluate(el => el.textContent, element)
