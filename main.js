@@ -26,15 +26,13 @@ const signin = async () =>{
 	await page.click('.button-primary');
 	await page.click('.button-primary');
 
-	await page.waitForNavigation({
-	  waitUntil: 'networkidle0',
-	});
+	await page.waitForTimeout(5000);
   
 	const hasAuth = (await page.content()).match(/Login Authentication/gi);
 	//const hasAuth = await page.waitForXPath("//*[contains(text(), 'Login Authentication')]");
 
-	if(hasAuth) {
-		console.log('hello');	
+	const commandProcess = async (page) =>{
+		console.log('running command process');	
 		await client.channels.cache.get(guildId).send('Authentication Required, Please eneter code using the command');
 		await page.content();
 		client.on('interactionCreate', async interaction => {
@@ -51,10 +49,19 @@ const signin = async () =>{
 				await launch(browser);
 			}
 		});
+	};
+	if(hasAuth) {
+		console.log('1st try');
+		commandProcess(page);
+	}
+	const hasAuth2 = (await page.content()).match(/Incorrect authentication code/gi);
+	if(hasAuth2){
+		console.log('incorrect code');
+		commandProcess(page);
 	} 
 	else {
 		await page.waitForTimeout(8000);
-		console.log('lmao');
+		console.log('launching game...');
 		await launch(browser);
 	}
 };
@@ -84,23 +91,22 @@ const launch = async (browser) =>{
 		await button2.click();
 	}
 	await page2.waitForTimeout(4000);
-	await foodCheck(page2);
 	const [button3] = await page2.$x("//span[contains(., 'SEND to adventure')]");
 	if (button3) {
 		await button3.click();
 		await button3.click();
 		await button3.click();
-		await page2.waitForTimeout(4000);
+		await page2.waitForTimeout(10000);
 		await page2.waitForSelector('.count-up');
 		let element = await page2.$('.count-up');
 		let value = await page2.evaluate(el => el.textContent, element)
 		await client.channels.cache.get(guildId).send('Harvest Sucessful, gained: ' + value + ' BAM.');
-		await browser.close();
 	}
 	else{
 		await client.channels.cache.get(guildId).send('Harvest Unsucessful, will try again soon...');
-		await browser.close();
 	}
+	await foodCheck(page2);
+	await browser.close();
 };
 
 const maintCheck = async (page2) =>{
