@@ -29,13 +29,14 @@ const signin = async () =>{
 	await page.waitForTimeout(5000);
   
 	const hasAuth = (await page.content()).match(/Login Authentication/gi);
+	const hasAuth2 = (await page.content()).match(/Incorrect authentication code/gi);
 	//const hasAuth = await page.waitForXPath("//*[contains(text(), 'Login Authentication')]");
 
 	const commandProcess = async (page) =>{
 		console.log('running command process');	
 		await client.channels.cache.get(guildId).send('Authentication Required, Please eneter code using the command');
-		await page.content();
 		client.on('interactionCreate', async interaction => {
+			await page.content();
 			if (!interaction.isCommand()) return;
 		
 			const { commandName } = interaction;
@@ -45,24 +46,27 @@ const signin = async () =>{
 				await page.type('input[name=code', messageToSend);
 				await interaction.reply({content:messageToSend});
 				await page.click('.button-text');
-				await page.waitForTimeout(8000);
-				await launch(browser);
 			}
 		});
 	};
 	if(hasAuth) {
 		console.log('1st try');
-		commandProcess(page);
+		await commandProcess(page);
 	}
-	const hasAuth2 = (await page.content()).match(/Incorrect authentication code/gi);
 	if(hasAuth2){
 		console.log('incorrect code');
-		commandProcess(page);
+		await commandProcess(page);
 	} 
 	else {
-		await page.waitForTimeout(8000);
-		console.log('launching game...');
-		await launch(browser);
+		const confirm = (await page.content()).match(/Logging In/gi);
+		if (confirm){
+			await page.waitForTimeout(8000);
+			console.log('launching game...');
+			await launch(browser);
+		}
+		else{
+			await commandProcess(page);
+		}
 	}
 };
 
