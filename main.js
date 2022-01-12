@@ -2,7 +2,6 @@
 const { Client, Intents } = require('discord.js');
 const { token,guildId } = require('./config.json');
 const puppeteer = require('puppeteer');
-var x = true;
 
 // Create a new client instance
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
@@ -24,12 +23,10 @@ const signin = async () =>{
 	await page.type('input[name=userName', 'miguel.pasamonte2@gmail.com');
 	await page.type('input[name=password', 'YuriP123!');
 	await page.click('.button-primary');
-	await page.click('.button-primary');
 
 	await page.waitForTimeout(5000);
   
 	const hasAuth = (await page.content()).match(/Login Authentication/gi);
-	const hasAuth2 = (await page.content()).match(/Incorrect authentication code/gi);
 	//const hasAuth = await page.waitForXPath("//*[contains(text(), 'Login Authentication')]");
 
 	const commandProcess = async (page) =>{
@@ -53,6 +50,7 @@ const signin = async () =>{
 		console.log('1st try');
 		await commandProcess(page);
 	}
+	const hasAuth2 = (await page.content()).match(/Incorrect authentication code/gi);
 	if(hasAuth2){
 		console.log('incorrect code');
 		await commandProcess(page);
@@ -63,9 +61,6 @@ const signin = async () =>{
 			await page.waitForTimeout(8000);
 			console.log('launching game...');
 			await launch(browser);
-		}
-		else{
-			await commandProcess(page);
 		}
 	}
 };
