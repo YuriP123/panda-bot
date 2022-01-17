@@ -2,6 +2,7 @@
 const { Client, Intents } = require('discord.js');
 const { token,guildId } = require('./config.json');
 const puppeteer = require('puppeteer');
+var x = true;
 
 // Create a new client instance
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
@@ -10,6 +11,25 @@ const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 client.once('ready', () => {
 	console.log('Ready!');
 });
+
+const commandProcess = async (page) =>{
+	console.log('running command process');	
+	await client.channels.cache.get(guildId).send('Authentication Required, Please eneter code using the command');
+	client.on('interactionCreate', async interaction => {
+		await page.content();
+		if (!interaction.isCommand()) return;
+	
+		const { commandName } = interaction;
+		
+		if (commandName === 'auth') {
+			const messageToSend = interaction.options.getString("code");
+			await page.type('input[name=code', messageToSend);
+			await interaction.reply({content:messageToSend});
+			await page.click('.button-text');
+		}
+	});
+	await page.waitForTimeout(1500);
+};
 
 const signin = async () =>{
 	const browser = await puppeteer.launch({headless: false});
@@ -22,45 +42,36 @@ const signin = async () =>{
   
 	await page.type('input[name=userName', 'miguel.pasamonte2@gmail.com');
 	await page.type('input[name=password', 'YuriP123!');
+	await page.waitForTimeout(1000);
 	await page.click('.button-primary');
 
-	await page.waitForTimeout(5000);
+	await page.waitForTimeout(2000);
   
 	const hasAuth = (await page.content()).match(/Login Authentication/gi);
 	//const hasAuth = await page.waitForXPath("//*[contains(text(), 'Login Authentication')]");
-
-	const commandProcess = async (page) =>{
-		console.log('running command process');	
-		await client.channels.cache.get(guildId).send('Authentication Required, Please eneter code using the command');
-		client.on('interactionCreate', async interaction => {
-			await page.content();
-			if (!interaction.isCommand()) return;
-		
-			const { commandName } = interaction;
-			
-			if (commandName === 'auth') {
-				const messageToSend = interaction.options.getString("code");
-				await page.type('input[name=code', messageToSend);
-				await interaction.reply({content:messageToSend});
-				await page.click('.button-text');
-			}
-		});
-	};
+	//Incorrect authentication code
 	if(hasAuth) {
 		console.log('1st try');
 		await commandProcess(page);
-	}
-	const hasAuth2 = (await page.content()).match(/Incorrect authentication code/gi);
-	if(hasAuth2){
-		console.log('incorrect code');
-		await commandProcess(page);
-	} 
-	else {
-		const confirm = (await page.content()).match(/Logging In/gi);
-		if (confirm){
-			await page.waitForTimeout(8000);
-			console.log('launching game...');
-			await launch(browser);
+		await page.waitForTimeout(2000);
+		const hasAuth2 = (await page.content()).match(/Incorrect authentication code/gi);
+		if(hasAuth2){
+			await client.channels.cache.get(guildId).send('Incorrect authentication code');
+			console.log('incorrect code');
+			await commandProcess(page);
+		}
+		else{
+			await page.waitForTimeout(4000);
+			console.log('checking for successful login');
+			console.log(page.url());
+			if (page.url () === 'https://wallet.wax.io/dashboard'){
+				await page.waitForTimeout(8000);
+				console.log('launching game...');
+				await launch(browser);
+			}
+			else{
+				await commandProcess(page);
+			}
 		}
 	}
 };
